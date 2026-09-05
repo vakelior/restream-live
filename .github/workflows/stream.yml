@@ -18,12 +18,12 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
 
-      - name: بث قناة Black الموسيقية 1080p عبر RTMP (نسخ بدون ترميز)
+      - name: بث قناة Panorama FM الموسيقية 1080p عبر RTMP (نسخ بدون ترميز)
         env:
           IPTV_URL: ${{ secrets.IPTV_URL }}
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
-          IURL="${IPTV_URL:-http://stream.mcquack.net/283/index.m3u8}"
+          IURL="${IPTV_URL:-https://d6izdil55uftn.cloudfront.net/out/v1/0a06d1d6377c47edbd48721ed724bd08/index.m3u8}"
           RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
 
           echo "==> مصدر البث (IPTV): $IURL"
