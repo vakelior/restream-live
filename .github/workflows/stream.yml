@@ -13,11 +13,13 @@ jobs:
       - name: تحميل المستودع
         uses: actions/checkout@v4
 
-      - name: تثبيت ffmpeg و yt-dlp
+      - name: تثبيت ffmpeg و yt-dlp و Deno
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-          pip install --quiet yt-dlp
+          pip install --quiet --upgrade yt-dlp
+          # تثبيت Deno (JS runtime) لتجاوز تحدي يوتيوب
+          curl -fsSL https://deno.land/install.sh | sh -s -- -y
 
       # ---- متغيرات البيئة (عدّل القيم من إعدادات الـ Secrets للمستودع) ----
       - name: تحميل الفيديو وبثه بـ -c copy
@@ -25,11 +27,19 @@ jobs:
           VIDEO_URL: ${{ secrets.VIDEO_URL }}
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
+          export PATH="$HOME/.deno/bin:$PATH"
+
           VURL="${VIDEO_URL:-https://youtu.be/dj6iermvLtU}"
           RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
 
-          echo "==> تحميل الفيديو"
-          yt-dlp -f "best[height<=1080]/best" --no-part -o "video.mp4" "$VURL"
+          echo "==> تحميل الفيديو (مع تجاوز تحدي البوت)"
+          yt-dlp \
+            --js-runtimes deno \
+            --remote-components ejs:github \
+            --extractor-args "youtube:player_client=android,ios,web,tv,web_embedded,web_safari" \
+            -f "best[height<=1080]/best" \
+            --merge-output-format mp4 \
+            --no-part -o "video.mp4" "$VURL"
 
           echo "==> البدء في البث (نسخ بدون ترميز)"
           timeout 345m ffmpeg -stream_loop -1 -re -i video.mp4 \
