@@ -8,19 +8,18 @@ on:
 jobs:
   stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 350   # بحد أقصى 6 ساعات (حد GitHub)
+    timeout-minutes: 350
     steps:
       - name: تحميل المستودع
         uses: actions/checkout@v4
 
-      - name: تثبيت ffmpeg حديث (v7 static)
+      - name: تثبيت ffmpeg حديث عبر PPA الرسمي
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq xz-utils curl
-          # تحميل أحدث نسخة static من ffmpeg (v7) لتجنب تحطم HLS
-          curl -sL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg.tar.xz
-          sudo tar -xJf /tmp/ffmpeg.tar.xz -C /usr/local/bin --strip-components=1
-          sudo chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+          sudo apt-get install -y -qq software-properties-common
+          sudo add-apt-repository -y ppa:ubuntuhandbook1/ffmpeg7
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
       - name: بث قناة Panorama FM الموسيقية 1080p عبر RTMP (نسخ بدون ترميز)
@@ -30,12 +29,9 @@ jobs:
         run: |
           IURL="${IPTV_URL:-https://d6izdil55uftn.cloudfront.net/out/v1/0a06d1d6377c47edbd48721ed724bd08/index.m3u8}"
           RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
-
           echo "==> مصدر البث (IPTV): $IURL"
           echo "==> الهدف (Restream)   : $RURL"
           echo "==> بدء البث بجودة 1080p (نسخ مباشر بدون ترميز)"
-
-          # حلقة لا نهائية: إعادة تشغيل تلقائية عند انقطاع الاتصال
           for i in $(seq 1 999999); do
             echo "----- المحاولة #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
