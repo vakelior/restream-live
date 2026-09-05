@@ -1,0 +1,37 @@
+name: Restream Live Stream
+
+on:
+  workflow_dispatch:      # تشغيل يدوي من تبويب Actions
+  schedule:
+    - cron: '0 9 * * *'   # يومياً 09:00 UTC (عدّله حسب حاجتك)
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350   # بحد أقصى 6 ساعات (حد GitHub)
+    steps:
+      - name: تحميل المستودع
+        uses: actions/checkout@v4
+
+      - name: تثبيت ffmpeg و yt-dlp
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install --quiet yt-dlp
+
+      # ---- متغيرات البيئة (عدّل القيم من إعدادات الـ Secrets للمستودع) ----
+      - name: تحميل الفيديو وبثه بـ -c copy
+        env:
+          VIDEO_URL: ${{ secrets.VIDEO_URL }}
+          RTMP_URL: ${{ secrets.RTMP_URL }}
+        run: |
+          VURL="${VIDEO_URL:-https://youtu.be/dj6iermvLtU}"
+          RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
+
+          echo "==> تحميل الفيديو"
+          yt-dlp -f "best[height<=1080]/best" --no-part -o "video.mp4" "$VURL"
+
+          echo "==> البدء في البث (نسخ بدون ترميز)"
+          timeout 345m ffmpeg -stream_loop -1 -re -i video.mp4 \
+            -c:v copy -c:a copy \
+            -f flv "$RURL"
