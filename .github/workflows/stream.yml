@@ -13,10 +13,15 @@ jobs:
       - name: تحميل المستودع
         uses: actions/checkout@v4
 
-      - name: تثبيت ffmpeg
+      - name: تثبيت ffmpeg حديث (v7 static)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg
+          sudo apt-get install -y -qq xz-utils curl
+          # تحميل أحدث نسخة static من ffmpeg (v7) لتجنب تحطم HLS
+          curl -sL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg.tar.xz
+          sudo tar -xJf /tmp/ffmpeg.tar.xz -C /usr/local/bin --strip-components=1
+          sudo chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe
+          ffmpeg -version | head -1
 
       - name: بث قناة Panorama FM الموسيقية 1080p عبر RTMP (نسخ بدون ترميز)
         env:
