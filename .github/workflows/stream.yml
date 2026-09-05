@@ -23,7 +23,7 @@ jobs:
           IPTV_URL: ${{ secrets.IPTV_URL }}
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
-          IURL="${IPTV_URL:-https://dash2.antik.sk/live/test_ocko_black/playlist.m3u8}"
+          IURL="${IPTV_URL:-http://stream.mcquack.net/283/index.m3u8}"
           RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
 
           echo "==> مصدر البث (IPTV): $IURL"
