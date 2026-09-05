@@ -8,50 +8,36 @@ on:
 jobs:
   stream:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 350   # بحد أقصى 6 ساعات (حد GitHub)
     steps:
       - name: تحميل المستودع
         uses: actions/checkout@v4
 
-      - name: تثبيت ffmpeg و yt-dlp و Deno
+      - name: تثبيت ffmpeg
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-          pip install --quiet --upgrade yt-dlp
-          curl -fsSL https://deno.land/install.sh | sh -s -- -y
 
-      - name: تحميل الفيديو وبثه بـ -c copy
+      - name: بث قناة الجزيرة عبر RTMP (نسخ بدون ترميز)
         env:
-          VIDEO_URL: ${{ secrets.VIDEO_URL }}
+          IPTV_URL: ${{ secrets.IPTV_URL }}
           RTMP_URL: ${{ secrets.RTMP_URL }}
-          YT_COOKIES: ${{ secrets.YT_COOKIES }}
         run: |
-          export PATH="$HOME/.deno/bin:$PATH"
-
-          VURL="${VIDEO_URL:-https://youtu.be/dj6iermvLtU}"
+          IURL="${IPTV_URL:-https://dash4.antik.sk/live/test_aljazeera/playlist.m3u8}"
           RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
 
-          # إذا وُجدت cookies في إعدادات الـ Secrets، نستخدمها لتجاوز تحدي البوت
-          if [ -n "$YT_COOKIES" ]; then
-            echo "$YT_COOKIES" > cookies.txt
-            COOKIE_ARG="--cookies cookies.txt"
-            echo "==> استخدام ملف cookies"
-          else
-            COOKIE_ARG=""
-            echo "==> بدون cookies (قد يتطلب تجاوز تحدي البوت)"
-          fi
+          echo "==> مصدر البث (IPTV): $IURL"
+          echo "==> الهدف (Restream)   : $RURL"
+          echo "==> بدء البث (نسخ مباشر بدون ترميز - صفر ضغط معالج)"
 
-          echo "==> تحميل الفيديو"
-          yt-dlp \
-            --js-runtimes deno \
-            --remote-components ejs:github \
-            --extractor-args "youtube:player_client=android,ios,tv,tv_embedded,web,web_embedded,web_safari,mweb" \
-            $COOKIE_ARG \
-            -f "best[height<=1080]/best" \
-            --merge-output-format mp4 \
-            --no-part -o "video.mp4" "$VURL"
-
-          echo "==> البدء في البث (نسخ بدون ترميز)"
-          timeout 345m ffmpeg -stream_loop -1 -re -i video.mp4 \
-            -c:v copy -c:a copy \
-            -f flv "$RURL"
+          # حلقة لا نهائية: إعادة تشغيل تلقائية عند انقطاع الاتصال
+          for i in $(seq 1 999999); do
+            echo "----- المحاولة #$i -----"
+            timeout 330m ffmpeg -hide_banner -loglevel warning \
+              -re -i "$IURL" \
+              -c:v copy -c:a copy \
+              -f flv -flvflags no_duration_filesize \
+              "$RURL"
+            echo "----- انقطع الاتصال، إعادة محاولة بعد 5 ثوانٍ -----"
+            sleep 5
+          done
