@@ -37,6 +37,7 @@ jobs:
             echo "----- المحاولة #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
               -re -i "$IURL" \
+              -map 0:v:0 -map 0:a:0 \
               -c:v copy -c:a copy \
               -f flv -flvflags no_duration_filesize \
               "$RURL"
