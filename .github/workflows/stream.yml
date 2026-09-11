@@ -39,9 +39,11 @@ jobs:
           echo "==> مصدر الأغنية: $VURL"
           echo "==> الهدف (Restream): $RURL"
 
-          # تحميل الأغنية (أفضل جودة فيديو + صوت)
+          # تحميل الأغنية بعميل android (يتجاوز فحص الـ bot)
           echo "==> تحميل الأغنية..."
-          yt-dlp -f "best[height<=1080]/best" --no-playlist -o "song.mp4" "$VURL"
+          yt-dlp -f "best[height<=1080]/best" --no-playlist \
+            --extractor-args "youtube:player_client=android" \
+            -o "song.mp4" "$VURL"
 
           echo "==> بدء البث في حلقة لا نهائية (loop)"
           for i in $(seq 1 999999); do
