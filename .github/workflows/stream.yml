@@ -23,20 +23,31 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
-      - name: بث قناة Panorama FM الموسيقية 1080p عبر RTMP (نسخ بدون ترميز)
+      - name: تثبيت yt-dlp
+        run: |
+          sudo apt-get install -y -qq python3 python3-pip
+          pip3 install -U yt-dlp
+          yt-dlp --version
+
+      - name: بث الأغنية المحددة (loop لا نهائي) عبر RTMP
         env:
-          IPTV_URL: ${{ secrets.IPTV_URL }}
+          VIDEO_URL: ${{ secrets.VIDEO_URL }}
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
-          IURL="${IPTV_URL:-https://d6izdil55uftn.cloudfront.net/out/v1/0a06d1d6377c47edbd48721ed724bd08/index_7.m3u8}"
+          VURL="${VIDEO_URL:-https://music.youtube.com/watch?v=YBKayxNTi9s&list=RDAMVMPQWYgdeGAHs}"
           RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
-          echo "==> مصدر البث (1080p): $IURL"
-          echo "==> الهدف (Restream) : $RURL"
-          echo "==> بدء البث بجودة 1080p (نسخ مباشر بدون ترميز)"
+          echo "==> مصدر الأغنية: $VURL"
+          echo "==> الهدف (Restream): $RURL"
+
+          # تحميل الأغنية (أفضل جودة فيديو + صوت)
+          echo "==> تحميل الأغنية..."
+          yt-dlp -f "best[height<=1080]/best" --no-playlist -o "song.mp4" "$VURL"
+
+          echo "==> بدء البث في حلقة لا نهائية (loop)"
           for i in $(seq 1 999999); do
-            echo "----- المحاولة #$i -----"
+            echo "----- الدورة #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
-              -re -i "$IURL" \
+              -re -stream_loop -1 -i "song.mp4" \
               -map 0:v:0 -map 0:a:0 \
               -c:v copy -c:a copy \
               -f flv -flvflags no_duration_filesize \
