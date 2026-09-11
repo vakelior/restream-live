@@ -23,13 +23,13 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
-      - name: بث الصوت فقط (بدون صورة) عبر RTMP
+      - name: بث الصوت (صورة سوداء ثابتة + صوت) عبر RTMP
         env:
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
           RURL="${RTMP_URL}"
           echo "==> الهدف (Restream): ${RURL}"
-          echo "==> الملف: song.mp4 (الصوت فقط)"
+          echo "==> الملف: song.mp4 (الصوت هو المصدر)"
           ls -la song.mp4
 
           for i in $(seq 1 999999); do
@@ -37,7 +37,11 @@ jobs:
             timeout 330m ffmpeg -hide_banner -loglevel warning \
               -re -stream_loop -1 -i "song.mp4" \
               -map 0:a:0 \
-              -c:a copy \
+              -f lavfi -i "color=black:s=640x360:r=10" \
+              -shortest \
+              -map 1:v:0 -map 0:a:0 \
+              -c:v libx264 -preset ultrafast -b:v 100k -pix_fmt yuv420p \
+              -c:a aac -b:a 96k \
               -f flv -flvflags no_duration_filesize \
               "$RURL"
             echo "----- انقطع الاتصال، إعادة محاولة بعد 5 ثوانٍ -----"
