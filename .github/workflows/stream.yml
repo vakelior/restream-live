@@ -34,8 +34,8 @@ jobs:
           VIDEO_URL: ${{ secrets.VIDEO_URL }}
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
-          VURL="${VIDEO_URL:-https://music.youtube.com/watch?v=YBKayxNTi9s&list=RDAMVMPQWYgdeGAHs}"
-          RURL="${RTMP_URL:-rtmp://live.restream.io/live/re_12000328_event11d497e43c154270ae00c867bf7d2225}"
+          VURL="${VIDEO_URL}"
+          RURL="${RTMP_URL}"
           echo "==> مصدر الأغنية: $VURL"
           echo "==> الهدف (Restream): $RURL"
 
