@@ -23,21 +23,21 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
-      - name: بث الأغنية (loop لا نهائي) عبر RTMP
+      - name: بث الصوت فقط (بدون صورة) عبر RTMP
         env:
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
           RURL="${RTMP_URL}"
           echo "==> الهدف (Restream): ${RURL}"
-          echo "==> الملف: song.mp4 (موجود في المستودع)"
+          echo "==> الملف: song.mp4 (الصوت فقط)"
           ls -la song.mp4
 
           for i in $(seq 1 999999); do
             echo "----- الدورة #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
               -re -stream_loop -1 -i "song.mp4" \
-              -map 0:v:0 -map 0:a:0 \
-              -c:v copy -c:a copy \
+              -map 0:a:0 \
+              -c:a copy \
               -f flv -flvflags no_duration_filesize \
               "$RURL"
             echo "----- انقطع الاتصال، إعادة محاولة بعد 5 ثوانٍ -----"
