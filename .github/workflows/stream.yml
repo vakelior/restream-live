@@ -30,16 +30,13 @@ jobs:
           RURL="${RTMP_URL}"
           echo "==> الهدف (Restream): ${RURL}"
 
-          # فك ترميز base64 اذا كان الملف نصي
           if file song.mp4 | grep -qi 'ASCII'; then
             base64 -d song.mp4 > song_real.mp4
             ACTUAL="song_real.mp4"
-            echo "==> نجح فك الترميز -> song_real.mp4"
           else
             ACTUAL="song.mp4"
-            echo "==> الملف ثنائي أصلاً -> song.mp4"
           fi
-
+          echo "==> الملف: $ACTUAL"
           ls -la "$ACTUAL"
           file "$ACTUAL"
 
@@ -47,10 +44,9 @@ jobs:
             echo "----- الدورة #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
               -re -stream_loop -1 -i "$ACTUAL" \
-              -map 0:a:0 \
               -f lavfi -i "color=black:s=640x360:r=10" \
               -shortest \
-              -map 1:v:0 -map 0:a:0 \
+              -map 0:a:0 -map 1:v:0 \
               -c:v libx264 -preset ultrafast -b:v 100k -pix_fmt yuv420p \
               -c:a aac -b:a 96k \
               -f flv -flvflags no_duration_filesize \
