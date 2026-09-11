@@ -23,29 +23,15 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
-      - name: تثبيت yt-dlp
-        run: |
-          sudo apt-get install -y -qq python3 python3-pip
-          pip3 install -U yt-dlp
-          yt-dlp --version
-
-      - name: بث الأغنية المحددة (loop لا نهائي) عبر RTMP
+      - name: بث الأغنية (loop لا نهائي) عبر RTMP
         env:
-          VIDEO_URL: ${{ secrets.VIDEO_URL }}
           RTMP_URL: ${{ secrets.RTMP_URL }}
         run: |
-          VURL="${VIDEO_URL}"
           RURL="${RTMP_URL}"
-          echo "==> مصدر الأغنية: $VURL"
-          echo "==> الهدف (Restream): $RURL"
+          echo "==> الهدف (Restream): ${RURL}"
+          echo "==> الملف: song.mp4 (موجود في المستودع)"
+          ls -la song.mp4
 
-          # تحميل الأغنية بعميل android (يتجاوز فحص الـ bot)
-          echo "==> تحميل الأغنية..."
-          yt-dlp -f "best[height<=1080]/best" --no-playlist \
-            --extractor-args "youtube:player_client=android" \
-            -o "song.mp4" "$VURL"
-
-          echo "==> بدء البث في حلقة لا نهائية (loop)"
           for i in $(seq 1 999999); do
             echo "----- الدورة #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
