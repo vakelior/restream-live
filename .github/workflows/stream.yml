@@ -29,17 +29,19 @@ jobs:
         run: |
           RURL="${RTMP_URL}"
           echo "==> الهدف (Restream): ${RURL}"
-          echo "==> تحويل base64 الى ملف الثنائي..."
-          base64 -d song.mp4 > song_real.mp4 2>/dev/null || true
-          if [ -s song_real.mp4 ] && file song_real.mp4 | grep -qi 'ISO Media'; then
+
+          # فك ترميز base64 اذا كان الملف نصي
+          if file song.mp4 | grep -qi 'ASCII'; then
+            base64 -d song.mp4 > song_real.mp4
             ACTUAL="song_real.mp4"
             echo "==> نجح فك الترميز -> song_real.mp4"
           else
             ACTUAL="song.mp4"
             echo "==> الملف ثنائي أصلاً -> song.mp4"
           fi
-          rm -f song_real.mp4 2>/dev/null || true
+
           ls -la "$ACTUAL"
+          file "$ACTUAL"
 
           for i in $(seq 1 999999); do
             echo "----- الدورة #$i -----"
