@@ -29,13 +29,22 @@ jobs:
         run: |
           RURL="${RTMP_URL}"
           echo "==> الهدف (Restream): ${RURL}"
-          echo "==> الملف: song.mp4 (الصوت هو المصدر)"
-          ls -la song.mp4
+          echo "==> تحويل base64 الى ملف الثنائي..."
+          base64 -d song.mp4 > song_real.mp4 2>/dev/null || true
+          if [ -s song_real.mp4 ] && file song_real.mp4 | grep -qi 'ISO Media'; then
+            ACTUAL="song_real.mp4"
+            echo "==> نجح فك الترميز -> song_real.mp4"
+          else
+            ACTUAL="song.mp4"
+            echo "==> الملف ثنائي أصلاً -> song.mp4"
+          fi
+          rm -f song_real.mp4 2>/dev/null || true
+          ls -la "$ACTUAL"
 
           for i in $(seq 1 999999); do
             echo "----- الدورة #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
-              -re -stream_loop -1 -i "song.mp4" \
+              -re -stream_loop -1 -i "$ACTUAL" \
               -map 0:a:0 \
               -f lavfi -i "color=black:s=640x360:r=10" \
               -shortest \
