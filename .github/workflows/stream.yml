@@ -1,20 +1,14 @@
-name: Restream Live Stream
+name: Pokemon Live Stream
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */5 * * *'
-    - cron: '30 1,6,11,16,21 * * *'
 
 jobs:
   stream:
     runs-on: ubuntu-latest
     timeout-minutes: 350
     steps:
-      - name: تحميل المستودع
-        uses: actions/checkout@v4
-
-      - name: تثبيت ffmpeg حديث عبر PPA الرسمي
+      - name: Install ffmpeg (PPA official)
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq software-properties-common
@@ -23,34 +17,24 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
-      - name: بث الصوت (صورة سوداء ثابتة + صوت) عبر RTMP
+      - name: Stream Pokemon (Pluto TV) via RTMP with -c copy
         env:
           RTMP_URL: ${{ secrets.RTMP_URL }}
+          STREAM_URL: ${{ secrets.STREAM_URL }}
         run: |
           RURL="${RTMP_URL}"
-          echo "==> الهدف (Restream): ${RURL}"
-
-          if file song.mp4 | grep -qi 'ASCII'; then
-            base64 -d song.mp4 > song_real.mp4
-            ACTUAL="song_real.mp4"
-          else
-            ACTUAL="song.mp4"
-          fi
-          echo "==> الملف: $ACTUAL"
-          ls -la "$ACTUAL"
-          file "$ACTUAL"
+          SRC="${STREAM_URL:-https://jmp2.uk/plu-6683cd71a1d7ad000866ec6a.m3u8}"
+          echo "==> مصدر البث: $SRC"
+          echo "==> الهدف (Restream): $RURL"
 
           for i in $(seq 1 999999); do
-            echo "----- الدورة #$i -----"
+            echo "----- محاولة البث رقم #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
-              -re -stream_loop -1 -i "$ACTUAL" \
-              -f lavfi -i "color=black:s=640x360:r=10" \
-              -shortest \
-              -map 0:a:0 -map 1:v:0 \
-              -c:v libx264 -preset ultrafast -b:v 100k -pix_fmt yuv420p \
-              -c:a aac -b:a 96k \
+              -re -i "$SRC" \
+              -map 0:v:0 -map 0:a:0 \
+              -c copy \
               -f flv -flvflags no_duration_filesize \
               "$RURL"
-            echo "----- انقطع الاتصال، إعادة محاولة بعد 5 ثوانٍ -----"
+            echo "----- انقطع الاتصال، إعادة المحاولة بعد 5 ثوانٍ -----"
             sleep 5
           done
