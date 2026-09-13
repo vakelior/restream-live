@@ -1,5 +1,4 @@
-name: Pokemon Live Stream
-
+name: Live Stream
 on:
   workflow_dispatch:
 
@@ -17,22 +16,23 @@ jobs:
           sudo apt-get install -y -qq ffmpeg
           ffmpeg -version | head -1
 
-      - name: Stream Pokemon (Pluto TV) via RTMP with -c copy
+      - name: Stream Al Jazeera Arabic 1080p via RTMP with -c copy
         env:
           RTMP_URL: ${{ secrets.RTMP_URL }}
           STREAM_URL: ${{ secrets.STREAM_URL }}
         run: |
           RURL="${RTMP_URL}"
-          SRC="${STREAM_URL:-https://jmp2.uk/plu-6683cd71a1d7ad000866ec6a.m3u8}"
-          echo "==> مصدر البث: $SRC"
+          SRC="${STREAM_URL:-https://live-hls-web-aja.getaj.net/AJA/index.m3u8}"
+          echo "==> المصدر (Al Jazeera Arabic): $SRC"
           echo "==> الهدف (Restream): $RURL"
-
           for i in $(seq 1 999999); do
             echo "----- محاولة البث رقم #$i -----"
             timeout 330m ffmpeg -hide_banner -loglevel warning \
+              -headers "Referer: https://www.aljazeera.net/\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n" \
               -re -i "$SRC" \
               -map 0:v:0 -map 0:a:0 \
               -c copy \
+              -bsf:a aac_adtstoasc \
               -f flv -flvflags no_duration_filesize \
               "$RURL"
             echo "----- انقطع الاتصال، إعادة المحاولة بعد 5 ثوانٍ -----"
